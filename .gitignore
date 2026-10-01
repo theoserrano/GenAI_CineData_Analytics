@@ -1,0 +1,18 @@
+# Environment variables
+.env
+
+# Python virtual environment
+.venv/
+env/
+venv/
+
+# Python cache & artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Data files (cinerocket.db is ~581MB)
+data/*.db
+!data/.gitkeep
