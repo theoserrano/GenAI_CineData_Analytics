@@ -72,6 +72,7 @@ def run_live_test():
         assert any("dim_movies" in t for t in schema_data.tables), "Should include dim_movies"
         assert any("dim_genres" in t for t in schema_data.tables), "Should include dim_genres"
         assert any("bridge_movie_genre" in t for t in schema_data.tables), "Should include bridge_movie_genre"
+        assert any("fact_movies_performance" in t for t in schema_data.tables), "Should include fact_movies_performance"
         print("\nLive Integration Test: PASSED! [OK]")
     except Exception as e:
         print(f"\nLive Integration Test FAILED [ERROR]: {e}")
