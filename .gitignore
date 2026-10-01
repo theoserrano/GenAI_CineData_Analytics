@@ -15,4 +15,7 @@ __pycache__/
 
 # Data files (cinerocket.db is ~581MB)
 data/*.db
+data/*.db-wal
+data/*.db-shm
+*.db-journal
 !data/.gitkeep
