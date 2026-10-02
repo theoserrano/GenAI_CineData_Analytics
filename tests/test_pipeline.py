@@ -3,10 +3,14 @@ End-to-End Pipeline Integration Tests.
 Includes offline mocked tests (default) and optional live API end-to-end integration test (--live).
 """
 
+import os
 import sys
 import unittest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
+
+# Suppress PydanticAI banner in test output
+os.environ["PYDANTIC_AI_NO_BANNER"] = "1"
 
 # Ensure project root is in sys.path
 BASE_DIR = Path(__file__).resolve().parent.parent

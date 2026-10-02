@@ -3,9 +3,13 @@ Unit and Integration Tests for SQL Generator Agent.
 Includes offline Pydantic model validation and optional live API integration test.
 """
 
+import os
 import sys
 import unittest
 from pathlib import Path
+
+# Suppress PydanticAI banner in test output
+os.environ["PYDANTIC_AI_NO_BANNER"] = "1"
 
 # Ensure project root is in sys.path
 BASE_DIR = Path(__file__).resolve().parent.parent
