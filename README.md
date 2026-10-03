@@ -112,16 +112,6 @@ Para assegurar rastreabilidade, histórico limpo e boas práticas de engenharia 
 | `refactor:` | Otimização de código em agentes ou ferramentas sem alteração na lógica de negócio ou regras de validação. |
 | `chore:` | Atualização de dependências em `requirements.txt`, configuração de ambiente ou ficheiros `.gitignore`. |
 
-#### Exemplo prático de histórico do projeto:
-```text
-feat: implementa interface Streamlit com tema dark, tratamento de recusa e centralizacao visual
-test: ajusta assercoes do teste live do schema linker
-feat: implementa orquestrador end-to-end do pipeline
-feat: adiciona modelo SQLResult e agente SQL Generator com auto-correcao
-feat: adiciona modelo SchemaLink e agente Schema Linker
-feat: implementa validadores de injecao de sql com isolamento read-only
-docs: adiciona capturas de tela e atualiza evidencias visuais no README
-
 ---
 
 ## 03. Instruções de Execução
