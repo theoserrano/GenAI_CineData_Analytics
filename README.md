@@ -78,33 +78,35 @@ Para mitigar o consumo da cota de 50 requisições diárias do nível gratuito d
 
 ```text
 GenAI_CineData_Analytics/
+├── .streamlit/
+│   └── config.toml                   # Tema dark e paleta visual (#6C3BAA)
 ├── data/
-│   └── cinerocket.db                 # Base SQLite dimensional (10 tabelas)
+│   └── cinerocket.db                 # Data Lakehouse SQLite dimensional (10 tabelas)
 ├── docs/
-│   └── assets/                       # Capturas de ecrã para demonstração
+│   └── assets/                       # Capturas de tela para documentação
 ├── src/
 │   ├── agents/
 │   │   ├── schema_linker.py          # Agente PydanticAI de Schema Linking
-│   │   └── sql_generator.py          # Agente PydanticAI com 3 ferramentas e auto-correção
+│   │   └── sql_generator.py          # Agente PydanticAI com auto-correção e tools
 │   ├── models/
 │   │   └── schemas.py                # Contratos Pydantic (SchemaLink, SQLResult)
-│   ├── tools/
-│   │   ├── connection.py             # Conexão segura em modo Read-Only
-│   │   ├── executor.py               # Execução e limite de linhas
-│   │   ├── guardrails.py             # Sanitização e bloqueio DDL/DML
-│   │   └── inspector.py              # Ferramentas de inspeção de esquemas e valores
+│   ├── tools/                        # Ferramentas de inspeção, executor e guardrails
 │   ├── ui/
 │   │   └── app.py                    # Interface analítica desenvolvida em Streamlit
+│   ├── utils/                        # Módulos auxiliares do sistema
+│   ├── database.py                   # Gerenciamento de conexão e contexto SQLite
 │   └── main.py                       # Orquestrador do pipeline de ponta a ponta
 ├── tests/
-│   ├── test_connection.py            # Validação do isolamento Read-Only
-│   ├── test_guardrails.py            # Testes de bloqueio de injeções
+│   ├── test_executor.py              # Testes do executor de queries e limite de linhas
+│   ├── test_guardrails.py            # Testes de bloqueio sintático/semântico DDL/DML
+│   ├── test_pipeline.py              # Testes de integração do fluxo analítico
+│   ├── test_retriever.py             # Testes de inspeção de esquemas e metadados
 │   ├── test_schema_linker.py         # Testes offline e live do Schema Linker
 │   └── test_sql_generator.py         # Testes offline e live do Candidate Generator
-├── .env.example                      # Modelo de variáveis de ambiente
-├── requirements.txt                  # Dependências do projeto (PydanticAI, Streamlit, etc.)
+├── .env.example                      # Template de variáveis de ambiente
+├── app.py                            # Entrypoint raiz da aplicação
+├── requirements.txt                  # Dependências do projeto
 └── README.md                         # Documentação completa do projeto
-
 ```
 
 ---
