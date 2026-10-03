@@ -59,7 +59,24 @@ def run_text_to_sql_pipeline(user_query: str) -> Dict[str, Any]:
     sql_result: SQLResult = generator_run.output
 
     # Etapa 4: Execução Final & Consolidação
-    execution_data = execute_query(sql_result.sql)
+    sql_clean = sql_result.sql.strip() if sql_result.sql else ""
+    is_out_of_scope = (not sql_clean) or (not schema_link.tables)
+
+    if is_out_of_scope:
+        execution_data = {
+            "status": "refused",
+            "row_count": 0,
+            "data": [],
+            "columns": [],
+            "message": (
+                "Olá! Sou o assistente da CineData Analytics focado em métricas e inteligência "
+                "do catálogo cinematográfico (bilheteria, elenco, produtoras e avaliações). "
+                "Não consigo responder a perguntas fora desse domínio. "
+                "Experimente perguntar sobre os filmes mais lucrativos ou diretores mais bem avaliados!"
+            ),
+        }
+    else:
+        execution_data = execute_query(sql_result.sql)
 
     return {
         "query": user_query,
@@ -113,7 +130,7 @@ def print_pipeline_report(result: Dict[str, Any]) -> None:
     print(f"  • Score de Confiança: {sql_info['confidence'] * 100:.1f}%")
     print(f"  • Raciocínio: {sql_info['reasoning']}")
     print("\n💻 CONSULTA SQL EXECUTADA:")
-    print("   " + sql_info['sql'].replace("\n", "\n   "))
+    print("   " + (sql_info['sql'].replace("\n", "\n   ") if sql_info['sql'] else "[Nenhuma query gerada]"))
 
     # Execution Data Report
     exec_info = result["execution"]
@@ -123,6 +140,8 @@ def print_pipeline_report(result: Dict[str, Any]) -> None:
     if exec_info["status"] == "success":
         print(f"  • Total de Registros Obtidos: {exec_info['row_count']}")
         print("\n" + format_table_output(exec_info["data"], exec_info["columns"]))
+    elif exec_info["status"] == "refused":
+        print(f"  • Mensagem: {exec_info.get('message')}")
     else:
         print(f"  • Erro de Execução: {exec_info.get('error_message')}")
 
