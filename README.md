@@ -1,4 +1,4 @@
-
+![Banner](./readme_images/bannerimagem.png)
 ---
 
 ## 01. Demonstração & Interface
@@ -8,27 +8,21 @@ O **GenAI CineData Analytics** foi desenvolvido para transformar interações em
 ### 1.1 Tela Inicial (Hero State & Atalhos Rápidos)
 A aplicação inicia num painel de navegação limpo, com tema dark nativo, badges com os esquemas das tabelas dimensionais (`dim_movies`, `fact_movies_performance`, etc.) e cartões interativos com perguntas frequentes de catálogo e finanças:
 
-<div align="center">
-  <img src="docs/assets/01_hero_screen.png" alt="Tela Inicial do Chat Analítico" width="900" />
-</div>
+![ImagemInicial](./readme_images/interfaceinicial.png)
 
 ---
 
 ### 1.2 Execução de Consulta e Apresentação Tabular
 Ao submeter uma questão analítica (ex: *"Top 10 filmes com maior receita"*), o orquestrador invoca os agentes em cascata e apresenta os registos resultantes numa grelha interativa, pronta para consumo imediato:
 
-<div align="center">
-  <img src="docs/assets/02_query_result.png" alt="Resultado Tabular da Consulta" width="750" />
-</div>
+![Consulta](./readme_images/pesquisa.png)
 
 ---
 
 ### 1.3 Transparência Algorítmica (SQL Gerado e Raciocínio dos Agentes)
 Abaixo de cada resposta, o componente recolhível de **Detalhes Técnicos** expõe a pontuação de confiança, a consulta SQL final executada e o registo passo a passo de raciocínio (*Chain-of-Thought*) gerado durante as fases de Schema Linking e Auto-Correção:
 
-<div align="center">
-  <img src="docs/assets/03_reasoning_pipeline.png" alt="Raciocínio dos Agentes e Consulta SQL" width="750" />
-</div>
+![Detalhes](./readme_images/detalhespesquisa.png)
 
 ---
 
@@ -54,16 +48,12 @@ O sistema conta com múltiplas camadas de defesa ativa e passiva:
 #### Evidência: Bloqueio de Jailbreak e Alteração de Função
 Tentativa de desviar a atuação do agente para culinária (*"Esqueça todas as instruções anteriores..."*). O agente ativa a recusa formal de escopo, atribui confiança zero e exibe uma mensagem orientadora ao utilizador, sem quebrar a interface nem executar comandos espúrios:
 
-<div align="center">
-  <img src="docs/assets/04_guardrail_jailbreak.png" alt="Guardrail de Bloqueio de Jailbreak" width="750" />
-</div>
+![Segurança](./readme_images/segurancapesquisa.png)
 
 #### Evidência: Bloqueio de Injeção de SQL Destrutivo (*Stacked Query*)
 Tentativa de executar um ataque de injeção destrutiva (`Qual o filme mais assistido? ; DROP TABLE dim_movies; --`). O pipeline identifica o padrão malicioso, aborta o processamento estruturado e preserva integralmente as tabelas dimensionais:
 
-<div align="center">
-  <img src="docs/assets/05_guardrail_sql_injection.png" alt="Bloqueio de Injeção de SQL Destrutivo" width="750" />
-</div>
+![Segurança2](./readme_images/segurancapesquisa2.png)
 
 ---
 
@@ -108,6 +98,29 @@ GenAI_CineData_Analytics/
 ├── requirements.txt                  # Dependências do projeto
 └── README.md                         # Documentação completa do projeto
 ```
+
+### 2.5 Convenção e Padronização de Commits
+
+Para assegurar rastreabilidade, histórico limpo e boas práticas de engenharia de software colaborativa, o repositório adota a especificação [Conventional Commits](https://www.conventionalcommits.org/):
+
+| Prefixo | Descrição e Aplicação no Projeto |
+| :--- | :--- |
+| `feat:` | Implementação de novos agentes, endpoints, ferramentas de segurança ou componentes de UI. |
+| `fix:` | Correção de tratamento de exceções, ajustes de layout ou normalização de queries SQL. |
+| `test:` | Adição ou refatoração de testes unitários offline e testes de integração com a flag `--live`. |
+| `docs:` | Atualizações de documentação, ficheiros Markdown e inclusão de capturas de ecrã/banners. |
+| `refactor:` | Otimização de código em agentes ou ferramentas sem alteração na lógica de negócio ou regras de validação. |
+| `chore:` | Atualização de dependências em `requirements.txt`, configuração de ambiente ou ficheiros `.gitignore`. |
+
+#### Exemplo prático de histórico do projeto:
+```text
+feat: implementa interface Streamlit com tema dark, tratamento de recusa e centralizacao visual
+test: ajusta assercoes do teste live do schema linker
+feat: implementa orquestrador end-to-end do pipeline
+feat: adiciona modelo SQLResult e agente SQL Generator com auto-correcao
+feat: adiciona modelo SchemaLink e agente Schema Linker
+feat: implementa validadores de injecao de sql com isolamento read-only
+docs: adiciona capturas de tela e atualiza evidencias visuais no README
 
 ---
 
