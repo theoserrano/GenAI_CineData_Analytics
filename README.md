@@ -194,5 +194,3 @@ streamlit run src/ui/app.py
 ```
 
 O navegador abrirá automaticamente o endereço `http://localhost:8501`.
-
-```
