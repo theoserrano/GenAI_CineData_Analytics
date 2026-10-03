@@ -57,6 +57,21 @@ class TestGuardrails(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_sql_security("   ")
 
+    def test_query_sanitization(self):
+        noisy_queries = [
+            "```sql\nSELECT * FROM dim_movies LIMIT 5;\n```",
+            "```\n-- Comentário inicial\nSELECT * FROM dim_movies LIMIT 5;\n```",
+            "-- Comentário de cabeçalho\n-- Outra linha\nSELECT * FROM dim_movies LIMIT 5;",
+            "...\n-- Comentário com reticências\nWITH top_m AS (SELECT * FROM dim_movies) SELECT * FROM top_m;",
+            "   \n\n   ```sql\n   SELECT * FROM dim_genres;\n   ```  "
+        ]
+        for q in noisy_queries:
+            try:
+                cleaned = validate_sql_security(q)
+                self.assertTrue(cleaned.startswith("SELECT") or cleaned.startswith("WITH"))
+            except ValueError as e:
+                self.fail(f"Sanitizer failed for query: {q}. Error: {e}")
+
     def test_system_prompt_guardrail_present(self):
         self.assertIn("assistente de leitura de dados", SYSTEM_GUARDRAIL_PROMPT)
         self.assertIn("recuse-se a responder", SYSTEM_GUARDRAIL_PROMPT)

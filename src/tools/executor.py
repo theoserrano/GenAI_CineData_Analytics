@@ -29,8 +29,8 @@ def execute_query(query: str, max_rows: int = DEFAULT_MAX_ROWS) -> Dict[str, Any
         column names, row count, data rows, or exact error message.
     """
     try:
-        # 1. Guardrail de Sintaxe e Injeção de SQL
-        validate_sql_security(query)
+        # 1. Guardrail de Sintaxe e Injeção de SQL (com limpeza rigorosa de markdown/comentários)
+        clean_query = validate_sql_security(query)
         
         # Enforce hard limit ceiling on max_rows
         effective_max_rows = min(max(1, max_rows), HARD_MAX_ROWS_CEILING)
@@ -39,7 +39,7 @@ def execute_query(query: str, max_rows: int = DEFAULT_MAX_ROWS) -> Dict[str, Any
         conn = get_readonly_connection()
         try:
             cursor = conn.cursor()
-            cursor.execute(query)
+            cursor.execute(clean_query)
             
             # Extract column names if description is present
             columns = [desc[0] for desc in cursor.description] if cursor.description else []

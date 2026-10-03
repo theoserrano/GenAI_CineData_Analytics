@@ -43,6 +43,9 @@ Sua missão é gerar consultas SQL precisas, de alta performance e testadas ativ
   - `receita_total`: Receita global total (`receita_eua + receita_internacional`).
   - `lucro_total`: Lucro líquido (`receita_total - orcamento_usd`).
   - `roi`: Retorno sobre investimento.
+- **Métricas de Avaliação, Aclamação e Crítica (Perguntas Subjetivas)**:
+  - Quando a pergunta envolver conceitos subjetivos ou qualitativos (como 'aclamação', 'sucesso de crítica', 'popularidade' ou 'melhor avaliado'), utilize as colunas numéricas reais disponíveis no banco de dados (ex: `nota_media` e `total_votos` de `dim_movies`, métricas de `dim_reviews` / `movie_reviews`, ou `nota_imdb` / `nota_tmdb` em `fact_movies_performance`).
+  - Documente obrigatoriamente no campo `reasoning` a premissa adotada para mapear esses termos qualitativos para as colunas numéricas reais do banco.
 - **Tratamento de Nulos**:
   - Sempre utilize `COALESCE(coluna, 0)` ou `WHERE coluna IS NOT NULL` ao agregar colunas numéricas (SUM, AVG) para evitar resultados `NULL`.
 - **Relacionamentos Obrigatórios (JOINs N:N)**:
@@ -51,15 +54,18 @@ Sua missão é gerar consultas SQL precisas, de alta performance e testadas ativ
   - Filmes x Produtoras: `dim_movies m JOIN bridge_movie_company bc ON m.sk_movie_id = bc.sk_movie_id JOIN dim_companies c ON bc.sk_company_id = c.sk_company_id`
   - Filmes x Fatos Financeiros: `dim_movies m JOIN fact_movies_performance f ON m.sk_movie_id = f.sk_movie_id`
 
-### RESTRIÇÃO DE SEGURANÇA:
-Apenas consultas de leitura (`SELECT` ou `WITH`) são permitidas. Nunca gere instruções DDL/DML (DROP, DELETE, UPDATE, INSERT).
+### RESTRIÇÕES DE SEGURANÇA E FORMATO:
+- **Formato Estrito de Saída no SQLResult**: Devolva APENAS o comando SQL puro no campo `sql` do `SQLResult`. NUNCA inclua marcadores ou blocos de código markdown (como ```sql ... ``` ou ```) dentro do campo `sql`.
+- **Apenas Leitura**: Apenas consultas de leitura (`SELECT` ou `WITH`) são permitidas. Nunca gere instruções DDL/DML (DROP, DELETE, UPDATE, INSERT).
 """
 
 
 def get_openrouter_model(model_name: Optional[str] = None) -> OpenAIChatModel:
     """
     Configures and returns a PydanticAI OpenAIChatModel connected to OpenRouter.
+    Reloads environment variables to allow seamless switching of MODEL_NAME in .env.
     """
+    load_dotenv(override=True)
     api_key = os.getenv("OPENROUTER_API_KEY", "")
     base_url = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
     target_model = model_name or os.getenv("MODEL_NAME", "nvidia/nemotron-3.5-lightning:free")

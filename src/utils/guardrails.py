@@ -16,23 +16,64 @@ FORBIDDEN_KEYWORDS_PATTERN = re.compile(
 ALLOWED_START_KEYWORDS = {"SELECT", "WITH", "EXPLAIN"}
 
 
-def validate_sql_security(query: str) -> None:
+def clean_sql_query(query: str) -> str:
+    """
+    Cleans a SQL query string by removing markdown code blocks (```sql ... ```),
+    leading comments (-- ...), leading reticências (...), and trailing backticks.
+    
+    Args:
+        query: Raw query string.
+        
+    Returns:
+        Cleaned SQL string starting with the first real SQL statement.
+    """
+    if not query:
+        return ""
+        
+    cleaned = query.strip()
+
+    # Remove opening markdown code block (```sql or ```)
+    cleaned = re.sub(r"^```(?:sql)?\s*", "", cleaned, flags=re.IGNORECASE).strip()
+    # Remove closing markdown code block (```)
+    cleaned = re.sub(r"\s*```$", "", cleaned).strip()
+
+    # Split lines and skip initial comments (-- ...), block comments (/* ... */), or empty lines
+    lines = cleaned.splitlines()
+    start_idx = 0
+    while start_idx < len(lines):
+        line = lines[start_idx].strip()
+        # Remove leading reticências (...) if present on the line
+        line = re.sub(r"^(?:\.\.\.|\…)\s*", "", line)
+        if not line or line.startswith("--") or line.startswith("/*"):
+            start_idx += 1
+        else:
+            lines[start_idx] = line  # update line without leading reticências
+            break
+
+    cleaned = "\n".join(lines[start_idx:]).strip()
+    cleaned = re.sub(r"\s*```$", "", cleaned).strip()
+    return cleaned
+
+
+def validate_sql_security(query: str) -> str:
     """
     Validates a SQL query string against security guardrails.
-    Allows SELECT and CTE (WITH ... AS) queries.
-    Allows single or multiple trailing semicolons.
-    Prohibits DDL/DML data manipulation and stacked multi-statement queries.
+    Performs rigorous cleaning (markdown, initial comments, whitespace removal)
+    before verifying if the statement starts with SELECT, WITH (CTE), or EXPLAIN.
     
     Args:
         query: The SQL query string to validate.
         
+    Returns:
+        The cleaned SQL query string.
+        
     Raises:
         ValueError: If any security guardrail rule is violated.
     """
-    if not query or not query.strip():
-        raise ValueError("Security Error: Query string cannot be empty.")
+    clean_query = clean_sql_query(query)
 
-    clean_query = query.strip()
+    if not clean_query:
+        raise ValueError("Security Error: Query string cannot be empty.")
 
     # 1. Validate starting keyword (must be SELECT, WITH, or EXPLAIN)
     first_word = clean_query.split()[0].upper() if clean_query.split() else ""
@@ -62,6 +103,8 @@ def validate_sql_security(query: str) -> None:
         raise ValueError(
             "Security Error: Query blocked by Guardrail. Multiple stacked SQL statements are not allowed."
         )
+
+    return clean_query
 
 
 # Guardrail Semântico de Prompt (System Prompt Directive)

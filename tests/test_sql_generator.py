@@ -48,6 +48,9 @@ class TestSQLGenerator(unittest.TestCase):
         self.assertIn("COALESCE", SQL_GENERATOR_SYSTEM_PROMPT)
         self.assertIn("bridge_movie_genre", SQL_GENERATOR_SYSTEM_PROMPT)
         self.assertIn("bridge_movie_person", SQL_GENERATOR_SYSTEM_PROMPT)
+        self.assertIn("aclamação", SQL_GENERATOR_SYSTEM_PROMPT)
+        self.assertIn("crítica", SQL_GENERATOR_SYSTEM_PROMPT)
+        self.assertIn("puro", SQL_GENERATOR_SYSTEM_PROMPT)
 
     def test_agent_initialization(self):
         """Validates that sql_generator_agent is properly instantiated."""

@@ -16,6 +16,16 @@ import pandas as pd
 import streamlit as st
 from src.main import run_text_to_sql_pipeline
 
+try:
+    from openai import RateLimitError
+except ImportError:
+    RateLimitError = Exception
+
+try:
+    from pydantic_ai.exceptions import UnexpectedModelBehavior
+except ImportError:
+    UnexpectedModelBehavior = Exception
+
 # -----------------------------------------------------------------------------
 # Page Configuration & Modern Styling
 # -----------------------------------------------------------------------------
@@ -143,6 +153,13 @@ AVAILABLE_TABLES = [
     "dim_reviews",
 ]
 
+FORMAT_ERROR_USER_GUIDANCE = (
+    "💡 **Orientação ao Usuário:** A pergunta não pôde ser convertida em uma consulta SQL válida. "
+    "Se a sua pergunta envolve conceitos subjetivos ou termos qualitativos (como 'aclamação', 'sucesso' ou 'crítica'), "
+    "por favor reescreva a pergunta especificando métricas quantitativas explícitas "
+    "(por exemplo: notas mínimas como 'nota média maior que 8.0', número mínimo de votos ou faixas de avaliação)."
+)
+
 # -----------------------------------------------------------------------------
 # Session State Initialization
 # -----------------------------------------------------------------------------
@@ -223,8 +240,12 @@ for msg in st.session_state.messages:
                 # Recusa graciosa por fora de escopo - a mensagem em linguagem natural já foi exibida
                 pass
             else:
-                err_msg = exec_info.get("error_message", "Erro desconhecido na execução da query.")
-                st.error(f"Erro na execução SQL: {err_msg}")
+                err_msg = str(exec_info.get("error_message", "Erro desconhecido na execução da query."))
+                err_type = exec_info.get("error_type", "")
+                if err_type == "security_guardrail" or "Security Error" in err_msg:
+                    st.warning(FORMAT_ERROR_USER_GUIDANCE)
+                else:
+                    st.error(f"Erro na execução SQL: {err_msg}")
 
             # 2. Technical details expander
             with st.expander("🔍 Detalhes Técnicos (SQL & Raciocínio)"):
@@ -266,20 +287,72 @@ if prompt:
 
     # 2. Assistant execution with st.status tracking
     with st.chat_message("assistant"):
-        with st.status("🔍 Processando sua pergunta...", expanded=True) as status:
-            st.write("Identificando tabelas (Schema Linking)...")
-            st.write("Gerando e testando SQL (Auto-Correção)...")
-            
-            pipeline_result = run_text_to_sql_pipeline(prompt)
-            
+        pipeline_result = None
+        try:
+            with st.status("🔍 Processando sua pergunta...", expanded=True) as status:
+                st.write("Identificando tabelas (Schema Linking)...")
+                st.write("Gerando e testando SQL (Auto-Correção)...")
+                
+                pipeline_result = run_text_to_sql_pipeline(prompt)
+                
+                status.update(
+                    label="✅ Processamento concluído!",
+                    state="complete",
+                    expanded=False,
+                )
+        except Exception as exc:
+            err_repr = str(exc)
+            err_type_str = str(type(exc))
+            is_rate_limit = (
+                isinstance(exc, RateLimitError)
+                or "429" in err_repr
+                or "rate limit" in err_repr.lower()
+                or "quota" in err_repr.lower()
+            )
+            is_unexpected_or_finish_error = (
+                isinstance(exc, UnexpectedModelBehavior)
+                or "finish_reason='error'" in err_repr
+                or "UnexpectedModelBehavior" in err_type_str
+                or "finish_reason" in err_repr
+            )
+
             status.update(
-                label="✅ Processamento concluído!",
-                state="complete",
+                label="⚠️ Falha de Comunicação com o Provedor",
+                state="error",
                 expanded=False,
             )
 
+            if is_rate_limit:
+                warning_text = (
+                    "⏳ **Limite de requisições excedido ou cota diária atingida (Erro 429).**\n\n"
+                    "O provedor OpenRouter ou o modelo configurado atingiu o limite temporário de requisições. "
+                    "Por favor, aguarde alguns instantes antes de tentar novamente ou verifique as configurações no arquivo `.env`."
+                )
+            elif is_unexpected_or_finish_error:
+                warning_text = (
+                    "⚡ **O provedor de inteligência artificial apresentou uma oscilação temporária (`finish_reason='error'`).**\n\n"
+                    "A API do modelo retornou uma resposta incompleta ou instável. Por favor, reenvie a sua pergunta para tentar novamente."
+                )
+            else:
+                warning_text = (
+                    "⚡ **Ocorreu uma instabilidade na conexão com o provedor de IA.**\n\n"
+                    "Não foi possível processar a requisição no momento. Por favor, convido você a reenviar a sua pergunta."
+                )
+
+            st.warning(warning_text)
+
+            st.session_state.messages.append(
+                {
+                    "role": "assistant",
+                    "content": warning_text,
+                }
+            )
+            st.rerun()
+
         exec_info = pipeline_result.get("execution", {})
         row_count = exec_info.get("row_count", 0)
+        err_msg = str(exec_info.get("error_message", ""))
+        err_type = exec_info.get("error_type", "")
 
         if exec_info.get("status") == "refused":
             response_text = exec_info.get(
@@ -288,6 +361,8 @@ if prompt:
             )
         elif exec_info.get("status") == "success":
             response_text = f"Aqui estão os resultados para a pergunta **\"{prompt}\"** ({row_count} registros encontrados):"
+        elif err_type == "security_guardrail" or "Security Error" in err_msg:
+            response_text = f"Não foi possível validar a estrutura da consulta para **\"{prompt}\"**."
         else:
             response_text = f"Não foi possível concluir a consulta para **\"{prompt}\"**."
 
@@ -302,7 +377,10 @@ if prompt:
             else:
                 st.info("Nenhum registro encontrado para esta consulta.")
         elif exec_info.get("status") == "error":
-            st.error(f"Erro: {exec_info.get('error_message')}")
+            if err_type == "security_guardrail" or "Security Error" in err_msg:
+                st.warning(FORMAT_ERROR_USER_GUIDANCE)
+            else:
+                st.error(f"Erro: {err_msg}")
 
         # Render technical expander (showing agent reasoning for refusal if out of scope)
         with st.expander("🔍 Detalhes Técnicos (SQL & Raciocínio)"):

@@ -12,8 +12,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
-from src.agents.schema_linker import schema_linker_agent
-from src.agents.sql_generator import sql_generator_agent
+from dotenv import load_dotenv
+from src.agents.schema_linker import create_schema_linker_agent
+from src.agents.sql_generator import create_sql_generator_agent
 from src.models.schemas import SchemaLink, SQLResult
 from src.tools.executor import execute_query
 
@@ -24,7 +25,7 @@ except ImportError:
     HAS_TABULATE = False
 
 
-def run_text_to_sql_pipeline(user_query: str) -> Dict[str, Any]:
+def run_text_to_sql_pipeline(user_query: str, model_name: Optional[str] = None) -> Dict[str, Any]:
     """
     Executes the multi-step SOTA Text-to-SQL Pipeline:
     
@@ -35,12 +36,17 @@ def run_text_to_sql_pipeline(user_query: str) -> Dict[str, Any]:
     
     Args:
         user_query: User question in natural language.
+        model_name: Optional model override name.
         
     Returns:
         Consolidated dictionary with query, schema link info, SQL result, and query execution data.
     """
+    load_dotenv(override=True)
+    linker_agent = create_schema_linker_agent(model_name)
+    generator_agent = create_sql_generator_agent(model_name)
+
     # Etapa 1: Schema Linking
-    linker_run = schema_linker_agent.run_sync(user_query)
+    linker_run = linker_agent.run_sync(user_query)
     schema_link: SchemaLink = linker_run.output
 
     # Etapa 2: Focused Context Assembly
@@ -55,7 +61,7 @@ def run_text_to_sql_pipeline(user_query: str) -> Dict[str, Any]:
     )
 
     # Etapa 3: Geração de SQL & Auto-Correção
-    generator_run = sql_generator_agent.run_sync(focused_context)
+    generator_run = generator_agent.run_sync(focused_context)
     sql_result: SQLResult = generator_run.output
 
     # Etapa 4: Execução Final & Consolidação

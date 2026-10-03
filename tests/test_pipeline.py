@@ -22,11 +22,12 @@ from src.main import run_text_to_sql_pipeline, format_table_output
 
 
 class TestEndToEndPipeline(unittest.TestCase):
-    @patch("src.main.schema_linker_agent")
-    @patch("src.main.sql_generator_agent")
-    def test_run_text_to_sql_pipeline_offline_mocked(self, mock_sql_agent, mock_linker_agent):
+    @patch("src.main.create_schema_linker_agent")
+    @patch("src.main.create_sql_generator_agent")
+    def test_run_text_to_sql_pipeline_offline_mocked(self, mock_create_sql_agent, mock_create_linker_agent):
         """Offline end-to-end pipeline test mocking LLM responses."""
         # 1. Setup mock outputs
+        mock_linker_agent = MagicMock()
         mock_linker_run = MagicMock()
         mock_linker_run.output = SchemaLink(
             tables=["dim_movies", "bridge_movie_genre", "dim_genres"],
@@ -34,7 +35,9 @@ class TestEndToEndPipeline(unittest.TestCase):
             reasoning="Seleção para filtro por gênero de filme."
         )
         mock_linker_agent.run_sync.return_value = mock_linker_run
+        mock_create_linker_agent.return_value = mock_linker_agent
 
+        mock_sql_agent = MagicMock()
         mock_sql_run = MagicMock()
         mock_sql_run.output = SQLResult(
             reasoning="Testei com execute_query e a busca retornou os gêneros ordenados.",
@@ -42,6 +45,7 @@ class TestEndToEndPipeline(unittest.TestCase):
             confidence=0.98
         )
         mock_sql_agent.run_sync.return_value = mock_sql_run
+        mock_create_sql_agent.return_value = mock_sql_agent
 
         # 2. Run pipeline
         user_query = "Quais são os gêneros disponíveis no catálogo?"
